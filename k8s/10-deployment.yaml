@@ -1,0 +1,115 @@
+# Rendered by the pipeline with envsubst: ${IMAGE} ${APP_VERSION} ${CONFIG_CHECKSUM} ${CHANGE_CAUSE}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finsecure-pay
+  namespace: finsecure
+  labels:
+    app.kubernetes.io/name: finsecure-pay
+    app.kubernetes.io/part-of: finsecure-pay
+  annotations:
+    kubernetes.io/change-cause: "${CHANGE_CAUSE}"
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10          # keeps old ReplicaSets so `kubectl rollout undo` works
+  progressDeadlineSeconds: 300
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: finsecure-pay
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0             # zero-downtime: never drop below desired capacity
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: finsecure-pay
+        app.kubernetes.io/version: "${APP_VERSION}"
+      annotations:
+        checksum/config: "${CONFIG_CHECKSUM}"
+    spec:
+      serviceAccountName: finsecure-pay
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      # Spread replicas across nodes / AZs so one node failure cannot take the service down
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: finsecure-pay
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: finsecure-pay
+      containers:
+        - name: finsecure-pay
+          image: ${IMAGE}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: management
+              containerPort: 8081
+          env:
+            - name: APP_VERSION
+              value: "${APP_VERSION}"
+          envFrom:
+            - configMapRef:
+                name: finsecure-pay-config
+            - secretRef:
+                name: finsecure-pay-secrets
+          resources:
+            requests:
+              cpu: 250m
+              memory: 384Mi
+            limits:
+              memory: 768Mi
+          # Startup probe gives the JVM time to boot before liveness starts counting
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: management
+            periodSeconds: 5
+            failureThreshold: 24     # up to 120s to start
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: management
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: management
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5           # let the load balancer deregister the pod before shutdown
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi

@@ -1,0 +1,64 @@
+# eksctl create cluster -f infra/eks/cluster.yaml      (~15-20 min)
+# eksctl delete cluster -f infra/eks/cluster.yaml --disable-nodegroup-eviction   (tear down to stop costs!)
+#
+# Replace <AWS_ACCOUNT_ID> below before running.
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: finsecure-eks
+  region: ap-southeast-1          # Singapore: lowest latency from Bangkok
+  # version: omitted -> eksctl uses the current EKS default (standard-support) version
+  tags:
+    project: finsecure-pay
+    owner: devops-capstone
+
+iam:
+  withOIDC: true
+
+# EKS access entries (no aws-auth ConfigMap editing). The CI user only gets edit rights
+# inside the application namespace - least privilege for the pipeline.
+accessConfig:
+  authenticationMode: API_AND_CONFIG_MAP
+  accessEntries:
+    - principalARN: arn:aws:iam::<AWS_ACCOUNT_ID>:user/jenkins-deployer
+      accessPolicies:
+        - policyARN: arn:aws:eks::aws:cluster-access-policy/AmazonEKSEditPolicy
+          accessScope:
+            type: namespace
+            namespaces: ["finsecure"]
+
+# Kubernetes Secrets are envelope-encrypted at rest by EKS by default.
+# To use your own customer-managed KMS key instead, uncomment:
+# secretsEncryption:
+#   keyARN: arn:aws:kms:ap-southeast-1:<AWS_ACCOUNT_ID>:key/<KEY_ID>
+
+addons:
+  - name: vpc-cni
+  - name: coredns
+  - name: kube-proxy
+  - name: metrics-server                     # needed by the HorizontalPodAutoscaler
+  - name: amazon-cloudwatch-observability    # Container Insights metrics + Fluent Bit log shipping
+
+managedNodeGroups:
+  - name: ng-general
+    instanceType: t3.medium
+    minSize: 2
+    desiredCapacity: 2
+    maxSize: 4
+    volumeSize: 30
+    privateNetworking: true                   # worker nodes have no public IPs
+    labels:
+      workload: general
+    iam:
+      attachPolicyARNs:
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy   # lets Fluent Bit write to CloudWatch Logs
+
+cloudWatch:
+  clusterLogging:
+    enableTypes: ["api", "audit", "authenticator"]   # control-plane audit trail
+    logRetentionInDays: 7

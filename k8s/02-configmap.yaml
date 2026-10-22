@@ -1,0 +1,18 @@
+# Non-sensitive, environment-specific settings. Change a value, commit, and the pipeline
+# rolls the pods automatically (the pod template carries a checksum of this file).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: finsecure-pay-config
+  namespace: finsecure
+  labels:
+    app.kubernetes.io/name: finsecure-pay
+data:
+  SPRING_PROFILES_ACTIVE: "k8s"
+  LOG_LEVEL: "INFO"
+  FINSECURE_VALIDATION_MAX_AMOUNT: "10000.00"
+  FINSECURE_VALIDATION_REVIEW_THRESHOLD: "5000.00"
+  FINSECURE_VALIDATION_SUPPORTED_CURRENCIES: "USD,EUR,GBP,SGD,THB"
+  FINSECURE_VALIDATION_BLOCKED_ACCOUNTS: "ACC00000666,ACC00000999"
+  FINSECURE_VALIDATION_MAX_TRANSACTION_AGE: "24h"
+  JAVA_OPTS: "-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
