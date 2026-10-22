@@ -1,0 +1,120 @@
+# Jenkins Configuration-as-Code. Every ${VAR} is read from jenkins/.env (git-ignored).
+# Secrets therefore never appear in Git, and the whole controller can be rebuilt from scratch.
+jenkins:
+  systemMessage: "FinSecure Pay CI/CD - managed by Configuration as Code"
+  numExecutors: 2
+  mode: NORMAL
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "${JENKINS_ADMIN_ID}"
+          password: "${JENKINS_ADMIN_PASSWORD}"
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+  globalNodeProperties:
+    - envVars:
+        env:
+          - key: DOCKERHUB_REPO
+            value: "${DOCKERHUB_REPO}"
+          - key: AWS_REGION
+            value: "${AWS_REGION}"
+          - key: EKS_CLUSTER
+            value: "${EKS_CLUSTER}"
+          - key: SONAR_HOST_URL
+            value: "${SONAR_HOST_URL}"
+          - key: NOTIFY_EMAIL
+            value: "${NOTIFY_EMAIL}"
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - usernamePassword:
+              scope: GLOBAL
+              id: github-creds
+              description: GitHub user + personal access token (repo read)
+              username: "${GITHUB_USER}"
+              password: "${GITHUB_TOKEN}"
+          - usernamePassword:
+              scope: GLOBAL
+              id: dockerhub-creds
+              description: Docker Hub user + access token (read/write)
+              username: "${DOCKERHUB_USER}"
+              password: "${DOCKERHUB_TOKEN}"
+          - usernamePassword:
+              scope: GLOBAL
+              id: aws-deployer
+              description: IAM user jenkins-deployer (EKS edit on namespace finsecure only)
+              username: "${AWS_ACCESS_KEY_ID}"
+              password: "${AWS_SECRET_ACCESS_KEY}"
+          - string:
+              scope: GLOBAL
+              id: sonar-token
+              description: SonarQube analysis token
+              secret: "${SONAR_TOKEN}"
+          - string:
+              scope: GLOBAL
+              id: nvd-api-key
+              description: NVD API key for OWASP Dependency-Check
+              secret: "${NVD_API_KEY}"
+          - string:
+              scope: GLOBAL
+              id: finsecure-api-key
+              description: API key injected into the app as a Kubernetes Secret
+              secret: "${FINSECURE_API_KEY}"
+          - usernamePassword:
+              scope: GLOBAL
+              id: smtp-creds
+              description: SMTP account (e.g. Gmail + app password)
+              username: "${SMTP_USERNAME}"
+              password: "${SMTP_PASSWORD}"
+
+unclassified:
+  location:
+    url: "http://localhost:8080/"
+    adminAddress: "${SMTP_USERNAME}"
+  mailer:
+    smtpHost: "${SMTP_HOST}"
+    smtpPort: "${SMTP_PORT}"
+    useSsl: true
+    authentication:
+      username: "${SMTP_USERNAME}"
+      password: "${SMTP_PASSWORD}"
+  email-ext:
+    mailAccount:
+      smtpHost: "${SMTP_HOST}"
+      smtpPort: "${SMTP_PORT}"
+      useSsl: true
+      credentialsId: smtp-creds
+    defaultContentType: "text/html"
+    defaultRecipients: "${NOTIFY_EMAIL}"
+
+jobs:
+  - script: >
+      pipelineJob('finsecure-pay') {
+        description('FinSecure Pay: build, test, scan, containerise and deploy to EKS')
+        properties {
+          pipelineTriggers {
+            triggers {
+              pollSCM { scmpoll_spec('H/2 * * * *') }
+            }
+          }
+        }
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote {
+                  url('${GITHUB_REPO_URL}')
+                  credentials('github-creds')
+                }
+                branch('*/main')
+              }
+            }
+            scriptPath('Jenkinsfile')
+            lightweight(true)
+          }
+        }
+      }

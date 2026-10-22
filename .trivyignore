@@ -1,0 +1,2 @@
+# Trivy risk-acceptance list. One CVE per line with a justification comment and an expiry, e.g.
+# CVE-2099-0001 exp:2026-12-31  # not reachable: affects optional module we do not load (approved by <name>)

@@ -1,0 +1,17 @@
+configuration-as-code
+job-dsl
+workflow-aggregator
+pipeline-stage-view
+pipeline-graph-view
+git
+github
+credentials-binding
+email-ext
+mailer
+junit
+coverage
+htmlpublisher
+dependency-check-jenkins-plugin
+timestamper
+ws-cleanup
+ansicolor
