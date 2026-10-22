@@ -1,0 +1,6 @@
+# Activated in Kubernetes via SPRING_PROFILES_ACTIVE=k8s (ConfigMap).
+# One JSON (Elastic Common Schema) object per line -> parsed by Fluent Bit / CloudWatch Logs Insights.
+logging:
+  structured:
+    format:
+      console: ecs

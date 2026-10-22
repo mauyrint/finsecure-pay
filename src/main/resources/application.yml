@@ -1,0 +1,64 @@
+spring:
+  application:
+    name: finsecure-pay
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+server:
+  port: 8080
+  shutdown: graceful
+  error:
+    include-stacktrace: never
+
+finsecure:
+  # Injected by Jenkins/Kubernetes (image tag); falls back to the Maven project version
+  app-version: ${APP_VERSION:@project.version@}
+  validation:
+    max-amount: 10000.00
+    review-threshold: 5000.00
+    supported-currencies: USD,EUR,GBP,SGD,THB
+    blocked-accounts: ""
+    account-pattern: "^ACC[0-9]{8}$"
+    max-transaction-age: 24h
+    allowed-clock-skew: 5m
+  security:
+    # Never set here. Provided by the Kubernetes Secret as FINSECURE_SECURITY_API_KEY.
+    api-key: ""
+
+management:
+  # Actuator lives on a separate, cluster-internal port (not exposed by the public Service)
+  server:
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+  info:
+    env:
+      enabled: true
+  metrics:
+    tags:
+      application: finsecure-pay
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+
+info:
+  app:
+    name: finsecure-pay
+    version: ${finsecure.app-version}
+
+logging:
+  level:
+    root: INFO
+    com.finsecure: ${LOG_LEVEL:INFO}
