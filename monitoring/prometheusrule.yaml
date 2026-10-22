@@ -1,0 +1,108 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: finsecure-pay-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: finsecure-pay
+spec:
+  groups:
+    - name: finsecure-pay.business
+      rules:
+        # DEMO ALERT: run `scripts/generate-traffic.sh <url> 300 0.8` (80% invalid) to fire it
+        - alert: FinSecureHighRejectionRate
+          expr: |
+            (
+              sum(rate(finsecure_transactions_validated_total{outcome="rejected"}[2m]))
+              /
+              clamp_min(sum(rate(finsecure_transactions_validated_total[2m])), 0.001)
+            ) > 0.30
+            and sum(rate(finsecure_transactions_validated_total[2m])) > 0.2
+          for: 1m
+          labels:
+            severity: warning
+            team: finsecure
+          annotations:
+            summary: "Transaction rejection rate above 30%"
+            description: "{{ $value | humanizePercentage }} of transactions were rejected over the last 2 minutes. Check client integrations or a bad ConfigMap rule change."
+            runbook: "docs/OPERATIONS.md#finsecurehighrejectionrate"
+
+    - name: finsecure-pay.availability
+      rules:
+        - alert: FinSecureReplicasUnavailable
+          expr: |
+            kube_deployment_status_replicas_available{namespace="finsecure",deployment="finsecure-pay"}
+              < kube_deployment_spec_replicas{namespace="finsecure",deployment="finsecure-pay"}
+          for: 2m
+          labels:
+            severity: critical
+            team: finsecure
+          annotations:
+            summary: "FinSecure Pay is running below desired replica count"
+            description: "Only {{ $value }} replicas available. Check `kubectl -n finsecure get pods` and events."
+            runbook: "docs/OPERATIONS.md#finsecurereplicasunavailable"
+
+        - alert: FinSecureTargetDown
+          expr: absent(up{namespace="finsecure",service="finsecure-pay-management"} == 1)
+          for: 2m
+          labels:
+            severity: critical
+            team: finsecure
+          annotations:
+            summary: "Prometheus cannot scrape any FinSecure Pay pod"
+            description: "No healthy scrape target for finsecure-pay for 2 minutes."
+            runbook: "docs/OPERATIONS.md#finsecuretargetdown"
+
+        - alert: FinSecurePodRestarting
+          expr: increase(kube_pod_container_status_restarts_total{namespace="finsecure",container="finsecure-pay"}[10m]) > 2
+          labels:
+            severity: warning
+            team: finsecure
+          annotations:
+            summary: "FinSecure Pay container restarting repeatedly"
+            description: "Pod {{ $labels.pod }} restarted more than twice in 10 minutes (possible liveness failure / OOM)."
+            runbook: "docs/OPERATIONS.md#finsecurepodrestarting"
+
+    - name: finsecure-pay.performance
+      rules:
+        - alert: FinSecureHighLatencyP95
+          expr: |
+            histogram_quantile(0.95,
+              sum by (le) (rate(http_server_requests_seconds_bucket{namespace="finsecure",uri="/validate"}[5m]))
+            ) > 0.5
+          for: 5m
+          labels:
+            severity: warning
+            team: finsecure
+          annotations:
+            summary: "p95 /validate latency above 500ms"
+            description: "p95 latency is {{ $value | humanizeDuration }}."
+            runbook: "docs/OPERATIONS.md#finsecurehighlatencyp95"
+
+        - alert: FinSecureHigh5xxRate
+          expr: |
+            sum(rate(http_server_requests_seconds_count{namespace="finsecure",status=~"5.."}[5m]))
+              / clamp_min(sum(rate(http_server_requests_seconds_count{namespace="finsecure"}[5m])), 0.001) > 0.02
+          for: 3m
+          labels:
+            severity: critical
+            team: finsecure
+          annotations:
+            summary: "More than 2% of requests are failing with 5xx"
+            description: "5xx ratio is {{ $value | humanizePercentage }}."
+            runbook: "docs/OPERATIONS.md#finsecurehigh5xxrate"
+
+        - alert: FinSecureJvmHeapHigh
+          expr: |
+            max by (pod) (
+              sum by (pod) (jvm_memory_used_bytes{namespace="finsecure",area="heap"})
+              / sum by (pod) (jvm_memory_max_bytes{namespace="finsecure",area="heap"} > 0)
+            ) > 0.85
+          for: 5m
+          labels:
+            severity: warning
+            team: finsecure
+          annotations:
+            summary: "JVM heap above 85% on {{ $labels.pod }}"
+            description: "Heap usage is {{ $value | humanizePercentage }}."
+            runbook: "docs/OPERATIONS.md#finsecurejvmheaphigh"

@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: finsecure-pay
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: finsecure-pay
+spec:
+  namespaceSelector:
+    matchNames: ["finsecure"]
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: finsecure-pay
+      app.kubernetes.io/component: management
+  endpoints:
+    - port: management
+      path: /actuator/prometheus
+      interval: 15s

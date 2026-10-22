@@ -1,0 +1,70 @@
+# Installed by scripts/install-monitoring.sh, which renders the ${...} e-mail placeholders
+# and creates the SMTP / Grafana Secrets first.
+
+prometheus:
+  prometheusSpec:
+    # Pick up ServiceMonitors / PrometheusRules from every namespace, not only Helm-labelled ones
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    retention: 7d
+    scrapeInterval: 15s
+    evaluationInterval: 15s
+    resources:
+      requests: {cpu: 200m, memory: 512Mi}
+
+grafana:
+  # Admin credentials come from a Secret created out-of-band (never in Git)
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+  defaultDashboardsTimezone: Asia/Bangkok
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard          # ConfigMaps with this label are auto-imported
+      labelValue: "1"
+      searchNamespace: ALL
+  service:
+    type: ClusterIP                     # access via `kubectl port-forward` (not public)
+
+alertmanager:
+  alertmanagerSpec:
+    # Mounted at /etc/alertmanager/secrets/alertmanager-smtp/ - SMTP password never in values
+    secrets:
+      - alertmanager-smtp
+  config:
+    global:
+      resolve_timeout: 5m
+      smtp_smarthost: "smtp.gmail.com:587"
+      smtp_require_tls: true
+      # ${...} placeholders are rendered by scripts/install-monitoring.sh (envsubst)
+      smtp_from: "${SMTP_USERNAME}"
+      smtp_auth_username: "${SMTP_USERNAME}"
+      smtp_auth_password_file: /etc/alertmanager/secrets/alertmanager-smtp/password
+    route:
+      receiver: "null"
+      group_by: ["alertname", "namespace"]
+      group_wait: 30s
+      group_interval: 2m
+      repeat_interval: 1h
+      routes:
+        - receiver: finsecure-email
+          matchers:
+            - team = "finsecure"
+        - receiver: "null"
+          matchers:
+            - alertname = "Watchdog"
+    receivers:
+      - name: "null"
+      - name: finsecure-email
+        email_configs:
+          - to: "${ALERT_EMAIL_TO}"
+            send_resolved: true
+            headers:
+              Subject: '[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} ({{ .CommonLabels.severity }})'
+    inhibit_rules:
+      - source_matchers: [severity = "critical"]
+        target_matchers: [severity = "warning"]
+        equal: [alertname, namespace]
