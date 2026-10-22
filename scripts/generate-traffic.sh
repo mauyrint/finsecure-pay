@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Generates load for dashboards and to deliberately trigger FinSecureHighRejectionRate.
+# Usage: scripts/generate-traffic.sh <base-url> [requests=300] [invalid-ratio=0.1] [parallel=4]
+#   normal traffic : scripts/generate-traffic.sh http://<elb> 600 0.1
+#   trigger alert  : scripts/generate-traffic.sh http://<elb> 1500 0.8      (keep running ~3 min)
+set -euo pipefail
+BASE="${1:?base url}"; N="${2:-300}"; RATIO="${3:-0.1}"; PAR="${4:-4}"
+KEY="${FINSECURE_API_KEY:-}"
+PCT=$(awk -v r="$RATIO" 'BEGIN{print int(r*100)}')
+export BASE KEY PCT
+one() {
+  local i=$1 body
+  if (( RANDOM % 100 < PCT )); then
+    body="{\"transactionId\":\"LOAD-BAD-$i\",\"sourceAccount\":\"ACC12345678\",\"destinationAccount\":\"ACC12345678\",\"amount\":99999,\"currency\":\"JPY\"}"
+  else
+    amt=$(( (RANDOM % 7000) + 1 ))
+    body="{\"transactionId\":\"LOAD-OK-$i\",\"sourceAccount\":\"ACC1234$(printf %04d $((RANDOM%9999)))\",\"destinationAccount\":\"ACC8765$(printf %04d $((RANDOM%9999)))\",\"amount\":${amt}.00,\"currency\":\"THB\"}"
+  fi
+  curl -s -o /dev/null -w '%{http_code}\n' -H 'Content-Type: application/json' ${KEY:+-H "X-API-Key: $KEY"} -d "$body" "$BASE/validate"
+}
+export -f one
+seq 1 "$N" | xargs -P "$PAR" -I{} bash -c 'one {}; sleep 0.2' | sort | uniq -c
