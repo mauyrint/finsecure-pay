@@ -97,6 +97,7 @@ Follow [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md): successful build, failed test, blocke
 | `permission denied /var/run/docker.sock` | the compose file runs Jenkins as root for Docker Desktop; on Linux add the docker group instead |
 | `exec format error` on EKS | image built for arm64; the pipeline builds `TARGET_PLATFORM=linux/amd64` – keep it, or use Graviton (t4g) nodes and `linux/arm64` |
 | Pods never created, event `violates PodSecurity` for container `opentelemetry-auto-instrumentation-java` | CloudWatch add-on injects a tracing init container | Pod annotation `instrumentation.opentelemetry.io/inject-java: "false"` (already in `k8s/10-deployment.yaml`) |
+| SCA stage stuck at `Downloaded 10,000/414,999` for hours | No NVD API key: NVD rate-limits the download | Leave `NVD_API_KEY=` empty and the pipeline uses Trivy for the dependency scan; add the key later to switch back to OWASP Dependency-Check |
 | Deploy stage `Forbidden` | access entry ARN/namespace mismatch in `infra/eks/cluster.yaml` (`eksctl utils describe-access-entry`...) or namespace not created by bootstrap |
 | Sonar stage times out | SonarQube not ready (needs ~2 GB RAM in Docker Desktop) or wrong token |
 | Pods `CreateContainerConfigError` | Secret `finsecure-pay-secrets` missing – deploy via Jenkins or pass `FINSECURE_API_KEY` to `scripts/deploy.sh` |

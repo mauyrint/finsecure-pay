@@ -101,17 +101,35 @@ pipeline {
                         }
                     }
                 }
-                stage('SCA: OWASP Dependency-Check') {
+                stage('SCA: Dependencies') {
                     steps {
                         withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
-                            // failBuildOnCVSS=7 (pom.xml): any HIGH/CRITICAL CVE in a dependency fails the build
-                            sh '$MVN -DskipTests dependency-check:check'
+                            script {
+                                if (env.NVD_API_KEY?.trim()) {
+                                    // OWASP Dependency-Check: failBuildOnCVSS=7 (pom.xml) blocks HIGH/CRITICAL CVEs
+                                    sh '$MVN -DskipTests dependency-check:check'
+                                } else {
+                                    // No NVD API key: the NVD download is rate-limited to many hours, so scan the
+                                    // packaged jar's libraries with Trivy instead (same gate: HIGH/CRITICAL fails)
+                                    echo 'NVD_API_KEY not set - using Trivy for dependency scanning'
+                                    sh '''trivy fs --cache-dir "$TRIVY_CACHE_DIR" --cache-backend memory --scanners vuln --format table \
+                                            --output reports/trivy-sca.txt target/finsecure-pay.jar
+                                          cat reports/trivy-sca.txt
+                                          trivy fs --cache-dir "$TRIVY_CACHE_DIR" --cache-backend memory --skip-db-update --skip-java-db-update --scanners vuln \
+                                            --severity HIGH,CRITICAL --exit-code 1 target/finsecure-pay.jar'''
+                                }
+                            }
                         }
                     }
                     post {
                         always {
-                            dependencyCheckPublisher pattern: 'target/dependency-check-report.xml'
-                            archiveArtifacts artifacts: 'target/dependency-check-report.*', allowEmptyArchive: true
+                            script {
+                                if (fileExists('target/dependency-check-report.xml')) {
+                                    dependencyCheckPublisher pattern: 'target/dependency-check-report.xml'
+                                }
+                            }
+                            archiveArtifacts artifacts: 'target/dependency-check-report.*, reports/trivy-sca.txt',
+                                             allowEmptyArchive: true
                         }
                     }
                 }
