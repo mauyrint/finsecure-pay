@@ -112,11 +112,11 @@ pipeline {
                                     // No NVD API key: the NVD download is rate-limited to many hours, so scan the
                                     // packaged jar's libraries with Trivy instead (same gate: HIGH/CRITICAL fails)
                                     echo 'NVD_API_KEY not set - using Trivy for dependency scanning'
-                                    sh '''trivy fs --cache-dir "$TRIVY_CACHE_DIR" --cache-backend memory --scanners vuln --format table \
-                                            --output reports/trivy-sca.txt target/finsecure-pay.jar
+                                    sh '''trivy rootfs --cache-dir "$TRIVY_CACHE_DIR" --cache-backend memory --scanners vuln --format table \
+                                            --output reports/trivy-sca.txt target/
                                           cat reports/trivy-sca.txt
-                                          trivy fs --cache-dir "$TRIVY_CACHE_DIR" --cache-backend memory --skip-db-update --skip-java-db-update --scanners vuln \
-                                            --severity HIGH,CRITICAL --exit-code 1 target/finsecure-pay.jar'''
+                                          trivy rootfs --cache-dir "$TRIVY_CACHE_DIR" --cache-backend memory --skip-db-update --skip-java-db-update --scanners vuln \
+                                            --severity HIGH,CRITICAL --exit-code 1 target/'''
                                 }
                             }
                         }
