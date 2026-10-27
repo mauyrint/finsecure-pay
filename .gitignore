@@ -10,3 +10,6 @@ jenkins/.env
 *.pem
 kubeconfig*
 reports/
+
+docs/
+demo/

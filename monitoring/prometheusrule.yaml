@@ -24,7 +24,7 @@ spec:
           annotations:
             summary: "Transaction rejection rate above 30%"
             description: "{{ $value | humanizePercentage }} of transactions were rejected over the last 2 minutes. Check client integrations or a bad ConfigMap rule change."
-            runbook: "docs/OPERATIONS.md#finsecurehighrejectionrate"
+            runbook: "README.md#logs-and-troubleshooting"
 
     - name: finsecure-pay.availability
       rules:
@@ -39,7 +39,7 @@ spec:
           annotations:
             summary: "FinSecure Pay is running below desired replica count"
             description: "Only {{ $value }} replicas available. Check `kubectl -n finsecure get pods` and events."
-            runbook: "docs/OPERATIONS.md#finsecurereplicasunavailable"
+            runbook: "README.md#logs-and-troubleshooting"
 
         - alert: FinSecureTargetDown
           expr: absent(up{namespace="finsecure",service="finsecure-pay-management"} == 1)
@@ -50,7 +50,7 @@ spec:
           annotations:
             summary: "Prometheus cannot scrape any FinSecure Pay pod"
             description: "No healthy scrape target for finsecure-pay for 2 minutes."
-            runbook: "docs/OPERATIONS.md#finsecuretargetdown"
+            runbook: "README.md#logs-and-troubleshooting"
 
         - alert: FinSecurePodRestarting
           expr: increase(kube_pod_container_status_restarts_total{namespace="finsecure",container="finsecure-pay"}[10m]) > 2
@@ -60,7 +60,7 @@ spec:
           annotations:
             summary: "FinSecure Pay container restarting repeatedly"
             description: "Pod {{ $labels.pod }} restarted more than twice in 10 minutes (possible liveness failure / OOM)."
-            runbook: "docs/OPERATIONS.md#finsecurepodrestarting"
+            runbook: "README.md#logs-and-troubleshooting"
 
     - name: finsecure-pay.performance
       rules:
@@ -76,7 +76,7 @@ spec:
           annotations:
             summary: "p95 /validate latency above 500ms"
             description: "p95 latency is {{ $value | humanizeDuration }}."
-            runbook: "docs/OPERATIONS.md#finsecurehighlatencyp95"
+            runbook: "README.md#logs-and-troubleshooting"
 
         - alert: FinSecureHigh5xxRate
           expr: |
@@ -89,7 +89,7 @@ spec:
           annotations:
             summary: "More than 2% of requests are failing with 5xx"
             description: "5xx ratio is {{ $value | humanizePercentage }}."
-            runbook: "docs/OPERATIONS.md#finsecurehigh5xxrate"
+            runbook: "README.md#logs-and-troubleshooting"
 
         - alert: FinSecureJvmHeapHigh
           expr: |
@@ -104,4 +104,4 @@ spec:
           annotations:
             summary: "JVM heap above 85% on {{ $labels.pod }}"
             description: "Heap usage is {{ $value | humanizePercentage }}."
-            runbook: "docs/OPERATIONS.md#finsecurejvmheaphigh"
+            runbook: "README.md#logs-and-troubleshooting"

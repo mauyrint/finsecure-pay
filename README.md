@@ -2,7 +2,7 @@
 
 This is my DevOps capstone project. It is a small Spring Boot API that checks payment transactions, plus everything needed to build, test, scan, deploy and monitor it automatically on **Amazon EKS**.
 
-![Architecture](docs/images/architecture.png)
+![Architecture](images/architecture.png)
 
 ## What is in the project
 
@@ -68,15 +68,43 @@ infra/eks/    EKS cluster definition and the IAM policy for Jenkins
 jenkins/      Jenkins + SonarQube setup (docker-compose, plugins, config as code)
 monitoring/   Prometheus alert rules, Grafana dashboard, Alertmanager settings
 scripts/      deploy, rollback, smoke test, traffic generator, pod recovery demo
-demo/         ways to break the pipeline on purpose (failing test, vulnerable library)
-docs/         setup guide, demo script, operations guide, design document
+images/       architecture diagram
 ```
 
-## More documents
+## Set up from zero
 
-- [docs/SETUP.md](docs/SETUP.md) – how to set everything up from zero
-- [docs/DEMO_RUNBOOK.md](docs/DEMO_RUNBOOK.md) – the demo script and the list of screenshots
-- [docs/OPERATIONS.md](docs/OPERATIONS.md) – how to read logs, fix problems and handle each alert
-- [docs/DESIGN.md](docs/DESIGN.md) – the design document
+You need: Git, Java 21, Maven, Docker Desktop, AWS CLI, eksctl, kubectl and Helm (`brew install git openjdk@21 maven awscli eksctl kubectl helm gettext`), plus accounts on GitHub, Docker Hub, AWS and Gmail (for alert e-mails, with an app password).
+
+1. **Build and test:** `mvn clean verify` (67 tests must pass).
+2. **Run in Docker:** `scripts/local-run.sh` (builds the image, runs it, calls `/health` and `/validate`).
+3. **Push the image:** `docker buildx build --platform linux/amd64 -t docker.io/<user>/finsecure-pay:<version> --push .` (EKS nodes are amd64).
+4. **AWS users:** `aws configure` with an admin key. Create the IAM user `jenkins-deployer` with the policy in `infra/eks/jenkins-deployer-iam-policy.json`.
+5. **Create the cluster:** `eksctl create cluster -f infra/eks/cluster.yaml` (about 20 min), then `scripts/bootstrap-cluster.sh`.
+6. **First deploy:** set `IMAGE`, `APP_VERSION` and `FINSECURE_API_KEY`, then `scripts/deploy.sh` and `scripts/smoke-test.sh <version>`.
+7. **Monitoring:** set `ALERT_EMAIL_TO`, `SMTP_USERNAME`, `SMTP_PASSWORD` and `GRAFANA_ADMIN_PASSWORD`, then `scripts/install-monitoring.sh`.
+8. **Jenkins + SonarQube:** create `jenkins/.env` with these values, then `cd jenkins && docker compose up -d --build`. Open http://localhost:8080. The `finsecure-pay` job polls GitHub every 2 minutes.
+
+   `JENKINS_ADMIN_ID`, `JENKINS_ADMIN_PASSWORD`, `GITHUB_REPO_URL`, `GITHUB_USER`, `GITHUB_TOKEN`, `DOCKERHUB_USER`, `DOCKERHUB_TOKEN`, `DOCKERHUB_REPO`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` (of `jenkins-deployer`), `AWS_REGION`, `EKS_CLUSTER`, `SONAR_HOST_URL`, `SONAR_TOKEN`, `NVD_API_KEY` (optional), `FINSECURE_API_KEY`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `NOTIFY_EMAIL`
+9. **Clean up:** `kubectl delete namespace finsecure monitoring`, then `eksctl delete cluster -f infra/eks/cluster.yaml --disable-nodegroup-eviction`.
+
+## Logs and troubleshooting
+
+| What | How |
+| --- | --- |
+| Live logs of both pods | `kubectl -n finsecure logs -l app.kubernetes.io/name=finsecure-pay --prefix --tail=100` |
+| A pod that crashed | `kubectl -n finsecure logs <pod> --previous` |
+| Why a pod is not ready | `kubectl -n finsecure describe pod <pod>` (read Events at the bottom) |
+| Old logs from all pods | CloudWatch → Logs Insights → log group `/aws/containerinsights/finsecure-eks/application` |
+| Pipeline problems | Jenkins → the build → Console Output (also attached to the failure e-mail) |
+
+Account numbers are masked in the logs (`ACC****5678`). Example Logs Insights query for rejected payments:
+
+```
+fields @timestamp, kubernetes.pod_name, log_processed.message
+| filter kubernetes.namespace_name = "finsecure" and log_processed.message like /transaction rejected/
+| sort @timestamp desc | limit 50
+```
+
+When the rejection-rate alert fires: open Grafana → "Validation failures by rule" to see which rule jumps. If it happened right after a deploy, check the last ConfigMap change and roll back with Jenkins `ACTION=rollback`.
 
 > No passwords, keys or tokens are stored in this repository. Jenkins reads them from `jenkins/.env`, which Git ignores, and the app's API key only reaches the cluster as a Kubernetes Secret.
