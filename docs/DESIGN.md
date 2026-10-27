@@ -37,16 +37,16 @@ Approved payments of 5,000 or more get a HIGH risk level and `reviewRequired: tr
 
 ## 4. Tool choices and design decisions
 
-| Area | What I used | Why |
-| --- | --- | --- |
-| CI/CD | Jenkins in Docker on my laptop, set up as code | Free and easy to rebuild. GitHub cannot reach my laptop, so Jenkins checks for changes every 2 minutes |
-| Container | Small Alpine Java image, non-root user | Fewer vulnerabilities; it ships the exact jar that passed the tests |
-| Registry | Docker Hub, one unique tag per build | Every pod can be traced back to a build and a commit |
-| Cloud | Amazon EKS in Singapore, 2 nodes | Managed Kubernetes, closest region to Thailand |
-| Deployment | 2 replicas, `maxUnavailable: 0`, autoscaling 2–6 | No downtime during updates; survives one pod or node failing |
-| Probes | Startup, readiness, liveness on `/health` | Returns 503 when not ready, so traffic stops going to that pod |
-| Monitoring | Prometheus, Grafana, Alertmanager | Standard tools; rules and dashboard are stored in Git |
-| Logging | CloudWatch Logs | No extra servers to run, but it ties us to AWS |
+| Tool | Why I chose it |
+| --- | --- |
+| Jenkins in Docker (on my laptop) | Free, and easy to rebuild with one command |
+| Small Alpine Java image, non-root user | Fewer vulnerabilities; ships the jar that passed the tests |
+| Docker Hub, one tag per build | Free, and I can trace every pod back to a commit |
+| Amazon EKS in Singapore | Managed Kubernetes in the region closest to Thailand |
+| 2 replicas, rolling update, autoscaling 2–6 | No downtime during updates; survives one pod failing |
+| Probes on `/health` | Traffic stops going to a pod that is not ready |
+| Prometheus, Grafana, Alertmanager | Free, standard tools; rules are stored in Git |
+| CloudWatch Logs | No extra servers to run (but it ties us to AWS) |
 
 The pipeline stages are: Checkout → Build → Unit Test → Package → Security Checks → Container Build → Image Scan → Push → Deploy → Smoke Test. If one stage fails, the rest are skipped, so a failing test or a security finding never reaches the cluster.
 
