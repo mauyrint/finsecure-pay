@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# Installs Prometheus + Grafana + Alertmanager (kube-prometheus-stack) with e-mail alerting.
-# Required env (do NOT commit): ALERT_EMAIL_TO, SMTP_USERNAME, SMTP_PASSWORD, GRAFANA_ADMIN_PASSWORD
 set -euo pipefail
 cd "$(dirname "$0")/.."
 : "${ALERT_EMAIL_TO:?}" "${SMTP_USERNAME:?}" "${SMTP_PASSWORD:?}" "${GRAFANA_ADMIN_PASSWORD:?}"
@@ -13,7 +11,6 @@ kubectl -n monitoring create secret generic grafana-admin --from-literal=admin-u
 
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts >/dev/null 2>&1 || true
 helm repo update >/dev/null
-# Render e-mail addresses into a temporary values file (passwords stay in Secrets)
 export ALERT_EMAIL_TO SMTP_USERNAME
 values="$(mktemp)"; trap 'rm -f "$values"' EXIT
 envsubst '${ALERT_EMAIL_TO} ${SMTP_USERNAME}' < monitoring/kube-prometheus-stack-values.yaml > "$values"

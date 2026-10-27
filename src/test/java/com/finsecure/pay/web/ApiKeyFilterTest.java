@@ -7,12 +7,10 @@ import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
-import com.finsecure.pay.config.SecurityProperties;
-
 class ApiKeyFilterTest {
 
     private MockHttpServletResponse run(String configuredKey, String uri, String providedKey) throws Exception {
-        ApiKeyFilter filter = new ApiKeyFilter(new SecurityProperties(configuredKey));
+        ApiKeyFilter filter = new ApiKeyFilter(configuredKey);
         MockHttpServletRequest request = new MockHttpServletRequest("POST", uri);
         if (providedKey != null) {
             request.addHeader(ApiKeyFilter.HEADER, providedKey);

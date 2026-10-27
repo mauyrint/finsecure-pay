@@ -5,7 +5,6 @@ target/
 *.iml
 .vscode/
 .DS_Store
-# local secrets - never commit
 .env
 jenkins/.env
 *.pem

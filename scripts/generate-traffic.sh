@@ -1,8 +1,4 @@
 #!/usr/bin/env bash
-# Generates load for dashboards and to deliberately trigger FinSecureHighRejectionRate.
-# Usage: scripts/generate-traffic.sh <base-url> [requests=300] [invalid-ratio=0.1] [parallel=4]
-#   normal traffic : scripts/generate-traffic.sh http://<elb> 600 0.1
-#   trigger alert  : scripts/generate-traffic.sh http://<elb> 1500 0.8      (keep running ~3 min)
 set -euo pipefail
 BASE="${1:?base url}"; N="${2:-300}"; RATIO="${3:-0.1}"; PAR="${4:-4}"
 KEY="${FINSECURE_API_KEY:-}"

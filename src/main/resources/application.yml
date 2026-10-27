@@ -11,7 +11,6 @@ server:
     include-stacktrace: never
 
 finsecure:
-  # Injected by Jenkins/Kubernetes (image tag); falls back to the Maven project version
   app-version: ${APP_VERSION:@project.version@}
   validation:
     max-amount: 10000.00
@@ -22,11 +21,9 @@ finsecure:
     max-transaction-age: 24h
     allowed-clock-skew: 5m
   security:
-    # Never set here. Provided by the Kubernetes Secret as FINSECURE_SECURITY_API_KEY.
     api-key: ""
 
 management:
-  # Actuator lives on a separate, cluster-internal port (not exposed by the public Service)
   server:
     port: 8081
   endpoints:

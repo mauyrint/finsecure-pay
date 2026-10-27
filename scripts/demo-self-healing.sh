@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Task 3 evidence: delete a pod and watch the ReplicaSet recreate it automatically.
 source "$(dirname "$0")/lib.sh"
 log "Pods before:"; kubectl -n "$NS" get pods -l app.kubernetes.io/name=finsecure-pay -o wide
 VICTIM="$(kubectl -n "$NS" get pods -l app.kubernetes.io/name=finsecure-pay -o jsonpath='{.items[0].metadata.name}')"

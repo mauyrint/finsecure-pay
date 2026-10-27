@@ -1,15 +1,3 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  OWASP Dependency-Check suppressions. Every entry MUST document: the CVE, why it is not
-  exploitable here (or the compensating control), who approved it, and an expiry date.
-  Suppressions are reviewed in pull requests like any other code change.
--->
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
-    <!-- Example (disabled):
-    <suppress until="2026-12-31Z">
-        <notes>CVE-XXXX-YYYY only affects feature Z which FinSecure Pay does not use. Approved: <name>.</notes>
-        <packageUrl regex="true">^pkg:maven/org\.example/lib@.*$</packageUrl>
-        <cve>CVE-XXXX-YYYY</cve>
-    </suppress>
-    -->
 </suppressions>

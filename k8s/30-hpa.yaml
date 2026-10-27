@@ -1,4 +1,3 @@
-# Scale between 2 and 6 replicas on CPU (requires metrics-server, installed as an EKS add-on)
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:

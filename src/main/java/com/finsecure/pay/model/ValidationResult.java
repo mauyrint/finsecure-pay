@@ -3,11 +3,6 @@ package com.finsecure.pay.model;
 import java.time.Instant;
 import java.util.List;
 
-/**
- * Outcome of validating a {@link TransactionRequest}.
- * {@code riskLevel} is only assessed for approved transactions; {@code reviewRequired}
- * flags approved high-value payments for manual compliance review.
- */
 public record ValidationResult(
         String transactionId,
         ValidationStatus status,

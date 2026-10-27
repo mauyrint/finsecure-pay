@@ -25,7 +25,7 @@ Save every screenshot in `docs/images/screenshots/` with the exact file name bel
 | 13 | T4 | Rollout of new version | `kubectl rollout status`, `/health` shows new version | `13-rollout.png` |
 | 14 | T4 | Rollback | Build with Parameters → `ACTION=rollback`; `kubectl rollout history` | `14-rollback.png` |
 | 15 | T5 | Scan reports | Sonar dashboard, Dependency-Check report, Trivy HTML report | `15-sonar.png`, `15-dependency-check.png`, `15-trivy.png` |
-| 16 | T5 | Security gate blocks release | commons-text 1.9 build: SCA stage red ("CVSS score ≥ 7") | `16-security-gate-blocked.png` |
+| 16 | T5 | Security gate blocks release | build #4: Image Scan red (Tomcat/Jackson CVEs) | `16-security-gate-blocked.png` |
 | 17 | T5 | Remediation → green | next build after removing the dependency | `17-remediated.png` |
 | 18 | T5 | Secrets handling | Jenkins *Credentials* page (masked), `kubectl -n finsecure get secret` (no values), `.gitignore` | `18-secrets.png` |
 | 19 | T6 | Dashboard with live metrics | Grafana dashboard during traffic | `19-grafana.png` |
@@ -51,9 +51,9 @@ Show: *Unit Test* red, test report lists `amountAboveLimitMustBeApproved_intenti
 Revert: `git rm src/test/java/com/finsecure/pay/ControlledFailureTest.java && git commit -m "demo: remove failing test" && git push`.
 
 ### C. Security gate (T5, test case 7)
-1. In `pom.xml` uncomment the `commons-text` **1.9** dependency → commit "demo: add vulnerable dependency" → push.
+1. In `pom.xml` add the `commons-text` **1.9** dependency (see demo/README.md) → commit "demo: add vulnerable dependency" → push.
 2. Show *SCA: OWASP Dependency-Check* red: `CVE-2022-42889` (CVSS 9.8) — "One or more dependencies were identified with vulnerabilities that have a CVSS score greater than or equal to '7.0'". Push/Deploy skipped.
-3. Remediate: comment it out again (or upgrade to the latest 1.x release, ≥ 1.10.0), commit "fix: remove vulnerable commons-text (CVE-2022-42889)", push → green build. Show the Dependency-Check trend graph.
+3. Remediate: delete it again (or upgrade to the latest 1.x release, ≥ 1.10.0), commit "fix: remove vulnerable commons-text (CVE-2022-42889)", push → green build. Show the Dependency-Check trend graph.
 
 ### D. Rollback to known-good (T4)
 * Automatic: a failing rollout or smoke test triggers `kubectl rollout undo` (see `scripts/deploy.sh`, Smoke Test stage).

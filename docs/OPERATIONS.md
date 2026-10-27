@@ -11,9 +11,9 @@
 | Control plane audit | Log group `/aws/eks/finsecure-eks/cluster` | Who changed what (api, audit, authenticator) |
 | Pipeline | Jenkins console + archived `reports/` | Failure e-mail attaches the compressed console log |
 
-The `k8s` Spring profile writes **one JSON object per line** in Elastic Common Schema (ECS): `@timestamp`, `log.level`, `message`, `log.logger`, `process.thread.name`, the MDC `requestId`, and `service.*`. Account numbers are always **masked** (`ACC****5678`) – no PII in logs.
+The `k8s` Spring profile writes **one JSON object per line** in Elastic Common Schema (ECS): `@timestamp`, `log.level`, `message`, `log.logger`, `process.thread.name`, and `service.*`. Account numbers are always **masked** (`ACC****5678`) – no PII in logs.
 
-Every response carries an `X-Request-Id` header (generated or propagated from the client), which is also in the log line – use it to trace a single request.
+Each log line has the transaction ID (`txnId=`), so you can search for one payment.
 
 ### CloudWatch Logs Insights queries
 
@@ -29,9 +29,9 @@ fields log_processed.message
 | parse log_processed.message "reasons=*" as reasons
 | stats count(*) as n by reasons | sort n desc
 
--- Trace one request end-to-end
+-- Find one transaction
 fields @timestamp, kubernetes.pod_name, log_processed.message
-| filter log_processed.requestId = "<X-Request-Id value>"
+| filter log_processed.message like /txnId=<transaction id>/
 
 -- Errors / stack traces
 fields @timestamp, kubernetes.pod_name, log_processed.message, log_processed.error.message
@@ -55,7 +55,7 @@ fields @timestamp, kubernetes.pod_name, log_processed.message, log_processed.err
 *>30% of transactions rejected for 1 min (warning).*
 - Grafana → *Validation failures by rule*: which rule spikes?
 - `AMOUNT_LIMIT_EXCEEDED` / `CURRENCY_UNSUPPORTED` right after a deploy → check the last ConfigMap change (`git log -p k8s/02-configmap.yaml`) and roll back.
-- One rule from one client (e.g. `TXN_ID_INVALID`) → client integration bug; contact the partner, logs show masked accounts + requestId.
+- One rule from one client (e.g. `TXN_ID_INVALID`) → client integration bug; contact the partner, logs show masked accounts + txnId.
 - Sudden flood of `ACCOUNT_BLOCKED` → possible fraud attempt; escalate to compliance.
 
 ### FinSecureReplicasUnavailable

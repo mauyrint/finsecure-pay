@@ -1,5 +1,3 @@
-# Public entry point: an AWS Network Load Balancer (via the in-tree/AWS LB controller annotations).
-# Only the API port is exposed; actuator/metrics (8081) stay internal.
 apiVersion: v1
 kind: Service
 metadata:
@@ -21,7 +19,6 @@ spec:
       targetPort: http
       protocol: TCP
 ---
-# Cluster-internal service used by Prometheus (ServiceMonitor) to scrape /actuator/prometheus
 apiVersion: v1
 kind: Service
 metadata:

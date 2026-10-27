@@ -9,7 +9,6 @@ spec:
   groups:
     - name: finsecure-pay.business
       rules:
-        # DEMO ALERT: run `scripts/generate-traffic.sh <url> 300 0.8` (80% invalid) to fire it
         - alert: FinSecureHighRejectionRate
           expr: |
             (

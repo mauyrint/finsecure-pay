@@ -1,9 +1,5 @@
-# Installed by scripts/install-monitoring.sh, which renders the ${...} e-mail placeholders
-# and creates the SMTP / Grafana Secrets first.
-
 prometheus:
   prometheusSpec:
-    # Pick up ServiceMonitors / PrometheusRules from every namespace, not only Helm-labelled ones
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
     ruleSelectorNilUsesHelmValues: false
@@ -14,7 +10,6 @@ prometheus:
       requests: {cpu: 200m, memory: 512Mi}
 
 grafana:
-  # Admin credentials come from a Secret created out-of-band (never in Git)
   admin:
     existingSecret: grafana-admin
     userKey: admin-user
@@ -23,15 +18,14 @@ grafana:
   sidecar:
     dashboards:
       enabled: true
-      label: grafana_dashboard          # ConfigMaps with this label are auto-imported
+      label: grafana_dashboard
       labelValue: "1"
       searchNamespace: ALL
   service:
-    type: ClusterIP                     # access via `kubectl port-forward` (not public)
+    type: ClusterIP
 
 alertmanager:
   alertmanagerSpec:
-    # Mounted at /etc/alertmanager/secrets/alertmanager-smtp/ - SMTP password never in values
     secrets:
       - alertmanager-smtp
   config:
@@ -39,7 +33,6 @@ alertmanager:
       resolve_timeout: 5m
       smtp_smarthost: "smtp.gmail.com:587"
       smtp_require_tls: true
-      # ${...} placeholders are rendered by scripts/install-monitoring.sh (envsubst)
       smtp_from: "${SMTP_USERNAME}"
       smtp_auth_username: "${SMTP_USERNAME}"
       smtp_auth_password_file: /etc/alertmanager/secrets/alertmanager-smtp/password

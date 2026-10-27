@@ -1,4 +1,3 @@
-# Node drains / upgrades must always leave at least one pod serving traffic
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:

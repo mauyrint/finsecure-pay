@@ -1,15 +1,3 @@
-// =============================================================================
-// FinSecure Pay - CI/CD pipeline
-//   Checkout -> Build -> Unit Test -> Package (+coverage gate)
-//   -> Security Checks [SonarQube | OWASP Dependency-Check | Gitleaks | Trivy IaC]
-//   -> Container Build -> Image Scan (Trivy gate) -> Push -> Deploy to EKS -> Smoke Test
-// Any failing stage stops the pipeline, so failed tests or HIGH/CRITICAL findings never deploy.
-// Run with ACTION=rollback to roll EKS back to the previous (or a named) known-good version.
-//
-// Global env (from Jenkins Configuration-as-Code): DOCKERHUB_REPO, AWS_REGION, EKS_CLUSTER,
-// SONAR_HOST_URL, NOTIFY_EMAIL. All secrets are Jenkins credentials - none are in this repo.
-// =============================================================================
-
 def isDeploy() { return (params.ACTION ?: 'deploy') == 'deploy' }
 
 pipeline {
@@ -20,7 +8,7 @@ pipeline {
         ansiColor('xterm')
         disableConcurrentBuilds()
         buildDiscarder(logRotator(numToKeepStr: '25'))
-        timeout(time: 90, unit: 'MINUTES')   // first run downloads the NVD database
+        timeout(time: 90, unit: 'MINUTES')
     }
 
     parameters {
@@ -33,7 +21,7 @@ pipeline {
     environment {
         APP_NAME        = 'finsecure-pay'
         K8S_NAMESPACE   = 'finsecure'
-        TARGET_PLATFORM = 'linux/amd64'                       // EKS worker nodes are x86_64 (t3.medium)
+        TARGET_PLATFORM = 'linux/amd64'
         MVN             = "mvn -B -ntp -Dmaven.repo.local=${JENKINS_HOME}/.m2/repository"
         TRIVY_CACHE_DIR = "${JENKINS_HOME}/.cache/trivy"
         KUBECONFIG      = "${WORKSPACE}/.kube/config"
@@ -80,7 +68,7 @@ pipeline {
         stage('Package') {
             when { expression { isDeploy() } }
             steps {
-                // verify = package + JaCoCo line-coverage gate (>= 80%)
+
                 sh '$MVN -DskipTests verify'
                 archiveArtifacts artifacts: 'target/finsecure-pay.jar', fingerprint: true
             }
@@ -92,7 +80,7 @@ pipeline {
                 stage('SAST: SonarQube') {
                     steps {
                         withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                            // The scanner polls the Quality Gate and fails this stage if it is not passed
+
                             sh '''$MVN -DskipTests sonar:sonar \
                                     -Dsonar.host.url="$SONAR_HOST_URL" \
                                     -Dsonar.projectVersion="$IMAGE_TAG" \
@@ -106,11 +94,10 @@ pipeline {
                         withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
                             script {
                                 if (env.NVD_API_KEY?.trim()) {
-                                    // OWASP Dependency-Check: failBuildOnCVSS=7 (pom.xml) blocks HIGH/CRITICAL CVEs
+
                                     sh '$MVN -DskipTests dependency-check:check'
                                 } else {
-                                    // No NVD API key: the NVD download is rate-limited to many hours, so scan the
-                                    // packaged jar's libraries with Trivy instead (same gate: HIGH/CRITICAL fails)
+
                                     echo 'NVD_API_KEY not set - using Trivy for dependency scanning'
                                     sh '''trivy rootfs --cache-dir "$TRIVY_CACHE_DIR" --cache-backend memory --scanners vuln --format table \
                                             --output reports/trivy-sca.txt target/
@@ -164,7 +151,7 @@ pipeline {
         stage('Image Scan: Trivy') {
             when { expression { isDeploy() } }
             steps {
-                // Reports first (never fail), then the gate: HIGH/CRITICAL with an available fix blocks release
+
                 sh '''trivy image --cache-dir "$TRIVY_CACHE_DIR" --scanners vuln --format json \
                         --output reports/trivy-image.json "$IMAGE"
                       trivy image --cache-dir "$TRIVY_CACHE_DIR" --skip-db-update --scanners vuln --format template \

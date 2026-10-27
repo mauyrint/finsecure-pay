@@ -10,19 +10,8 @@ import com.finsecure.pay.model.TransactionRequest;
 import com.finsecure.pay.model.ValidationResult;
 import com.finsecure.pay.service.ValidationService;
 
-/**
- * {@code POST /validate}
- * <ul>
- *   <li>200 OK - transaction approved (may still be flagged {@code reviewRequired})</li>
- *   <li>422 Unprocessable - one or more business rules failed; all failures are listed</li>
- *   <li>400 Bad Request - body is not valid JSON</li>
- *   <li>401 Unauthorized - missing/invalid {@code X-API-Key} (when the key is configured)</li>
- * </ul>
- */
 @RestController
 public class TransactionController {
-
-    static final int UNPROCESSABLE = 422;
 
     private final ValidationService validationService;
 
@@ -30,11 +19,10 @@ public class TransactionController {
         this.validationService = validationService;
     }
 
-    @PostMapping(path = "/validate",
-            consumes = MediaType.APPLICATION_JSON_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(path = "/validate", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ValidationResult> validate(@RequestBody TransactionRequest request) {
         ValidationResult result = validationService.validate(request);
-        return ResponseEntity.status(result.valid() ? 200 : UNPROCESSABLE).body(result);
+        int status = result.valid() ? 200 : 422;
+        return ResponseEntity.status(status).body(result);
     }
 }

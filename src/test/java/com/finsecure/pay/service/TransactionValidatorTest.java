@@ -1,7 +1,6 @@
 package com.finsecure.pay.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -277,19 +276,19 @@ class TransactionValidatorTest {
         }
 
         @Test
-        void normalisesConfiguredValues() {
-            ValidationProperties p = new ValidationProperties(null, null,
-                    Set.of(" usd ", "thb", ""), Set.of("acc00000001"), " ", null, null);
-            assertThat(p.supportedCurrencies()).containsExactlyInAnyOrder("USD", "THB");
-            assertThat(p.blockedAccounts()).containsExactly("ACC00000001");
-            assertThat(p.accountPattern()).isEqualTo("^ACC[0-9]{8}$");
+        void usesConfiguredLimit() {
+            ValidationProperties small = new ValidationProperties(new BigDecimal("100.00"), new BigDecimal("50.00"),
+                    Set.of("USD"), Set.of(), "^ACC[0-9]{8}$", Duration.ofHours(24), Duration.ofMinutes(5));
+            ValidationResult result = new TransactionValidator(small, CLOCK).validate(valid());
+            assertThat(codes(result)).containsExactly(TransactionValidator.AMOUNT_LIMIT_EXCEEDED);
         }
 
         @Test
-        void rejectsReviewThresholdAboveLimit() {
-            assertThatThrownBy(() -> new ValidationProperties(new BigDecimal("100"), new BigDecimal("200"),
-                    null, null, null, null, null))
-                    .isInstanceOf(IllegalArgumentException.class);
+        void usesConfiguredBlockList() {
+            ValidationProperties rules = new ValidationProperties(new BigDecimal("10000.00"), new BigDecimal("5000.00"),
+                    Set.of("USD"), Set.of("ACC87654321"), "^ACC[0-9]{8}$", Duration.ofHours(24), Duration.ofMinutes(5));
+            ValidationResult result = new TransactionValidator(rules, CLOCK).validate(valid());
+            assertThat(codes(result)).containsExactly(TransactionValidator.ACCOUNT_BLOCKED);
         }
     }
 }

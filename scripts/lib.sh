@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
-# Shared helpers for pipeline and demo scripts.
 set -euo pipefail
 NS="${K8S_NAMESPACE:-finsecure}"
 DEPLOY="deploy/finsecure-pay"
 log() { printf '\033[1;34m[%s]\033[0m %s\n' "$(date +%H:%M:%S)" "$*"; }
 
-# In Jenkins we authenticate with the jenkins-deployer IAM user and write a throw-away kubeconfig.
 ensure_kubeconfig() {
   if [[ -n "${AWS_ACCESS_KEY_ID:-}" && -n "${EKS_CLUSTER:-}" ]]; then
     mkdir -p "$(dirname "${KUBECONFIG:-$PWD/.kube/config}")"

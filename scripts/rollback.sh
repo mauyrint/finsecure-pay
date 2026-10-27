@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# Usage: scripts/rollback.sh            -> undo to the previous ReplicaSet revision
-#        scripts/rollback.sh <image-tag> -> redeploy a specific known-good tag
 source "$(dirname "$0")/lib.sh"
 cd "$(dirname "$0")/.."
 TAG="${1:-}"

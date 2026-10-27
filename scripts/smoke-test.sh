@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# Post-deployment verification through the public LoadBalancer.
-# Usage: scripts/smoke-test.sh [expected-version] [base-url]
 source "$(dirname "$0")/lib.sh"
 EXPECTED="${1:-}"
 ensure_kubeconfig
@@ -9,7 +7,7 @@ KEY_HEADER=()
 [[ -n "${FINSECURE_API_KEY:-}" ]] && KEY_HEADER=(-H "X-API-Key: ${FINSECURE_API_KEY}")
 
 log "Smoke testing ${BASE}"
-for i in $(seq 1 40); do      # new NLB DNS can take a few minutes to resolve
+for i in $(seq 1 40); do
   if body="$(curl -fsS --max-time 5 "${BASE}/health" 2>/dev/null)"; then break; fi
   sleep 10; [[ $i == 40 ]] && { echo "health endpoint unreachable" >&2; exit 1; }
 done

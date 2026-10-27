@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Task 2 evidence: build, run and test the container locally.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 TAG="${1:-1.0.0-local}"

@@ -1,18 +1,9 @@
 # syntax=docker/dockerfile:1.7
-# ---------------------------------------------------------------------------
-# FinSecure Pay runtime image
-#   * Input: the jar produced (and unit-tested) by `mvn package` / the Jenkins pipeline,
-#     so the exact tested artifact is what gets shipped.
-#   * Multi-arch friendly: the extract stage runs on the build host's native platform.
-#   * Runs as a non-root user, minimal JRE-only Alpine base, OS packages patched at build.
-# Build:  mvn -DskipTests package && docker build -t finsecure-pay:local .
-# ---------------------------------------------------------------------------
 ARG JAVA_IMAGE=eclipse-temurin:21-jre-alpine
 
 FROM --platform=$BUILDPLATFORM ${JAVA_IMAGE} AS extract
 WORKDIR /workspace
 COPY target/finsecure-pay.jar app.jar
-# Split the fat jar into Docker layers (dependencies change rarely -> better cache reuse)
 RUN java -Djarmode=tools -jar app.jar extract --layers --launcher --destination extracted \
     && mkdir -p extracted/snapshot-dependencies
 
@@ -44,7 +35,6 @@ ENV APP_VERSION=${VERSION} \
 USER 10001:10001
 EXPOSE 8080 8081
 
-# Used by `docker run`; Kubernetes uses its own liveness/readiness probes instead.
 HEALTHCHECK --interval=15s --timeout=3s --start-period=40s --retries=3 \
   CMD curl -fsS http://127.0.0.1:8080/health || exit 1
 

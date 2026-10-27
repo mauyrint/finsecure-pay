@@ -16,12 +16,6 @@ import com.finsecure.pay.model.TransactionRequest;
 import com.finsecure.pay.model.ValidationError;
 import com.finsecure.pay.model.ValidationResult;
 
-/**
- * Pure business-rule engine for FinSecure Pay transactions. It has no framework
- * dependencies beyond the {@link Component} marker, so every rule is unit-testable in isolation.
- *
- * <p>All rules are evaluated (not fail-fast) so a client receives every problem in one response.
- */
 @Component
 public class TransactionValidator {
 
@@ -141,7 +135,7 @@ public class TransactionValidator {
 
     private void validateTimestamp(Instant timestamp, Instant now, List<ValidationError> errors) {
         if (timestamp == null) {
-            return; // optional field
+            return;
         }
         if (timestamp.isAfter(now.plus(rules.allowedClockSkew()))) {
             errors.add(new ValidationError(TIMESTAMP_IN_FUTURE, "timestamp", "timestamp is in the future"));

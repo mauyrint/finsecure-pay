@@ -19,17 +19,12 @@
 
     <properties>
         <java.version>21</java.version>
-        <!-- Security fix (found by the Trivy image scan in build #4): Spring Boot 4.1.1 ships
-             Tomcat 11.0.24 and Jackson 3.1.5, which have HIGH/CRITICAL CVEs. Pin the patched versions
-             until the next Spring Boot patch release includes them. -->
         <tomcat.version>11.0.25</tomcat.version>
         <jackson-bom.version>3.1.7</jackson-bom.version>
         <jacoco.version>0.8.15</jacoco.version>
         <dependency-check.version>12.2.2</dependency-check.version>
         <sonar-maven-plugin.version>5.8.0.7211</sonar-maven-plugin.version>
-        <!-- Security gate: fail the build on any dependency with CVSS >= 7.0 (HIGH / CRITICAL) -->
         <dependency-check.failBuildOnCVSS>7</dependency-check.failBuildOnCVSS>
-        <!-- Quality gate: minimum line coverage enforced by JaCoCo -->
         <jacoco.minimum.coverage>0.80</jacoco.minimum.coverage>
         <sonar.projectKey>finsecure-pay</sonar.projectKey>
         <sonar.projectName>FinSecure Pay</sonar.projectName>
@@ -55,15 +50,6 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- DEMO (Task 5): uncomment to introduce a known CRITICAL CVE (CVE-2022-42889, "Text4Shell").
-             The OWASP Dependency-Check and Trivy gates must block the pipeline. Remove it again to remediate.
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-text</artifactId>
-            <version>1.9</version>
-        </dependency>
-        -->
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc-test</artifactId>
@@ -80,14 +66,12 @@
                 <executions>
                     <execution>
                         <goals>
-                            <!-- Exposes build version/time via BuildProperties -->
                             <goal>build-info</goal>
                         </goals>
                     </execution>
                 </executions>
             </plugin>
 
-            <!-- Code coverage + coverage gate (fails `mvn verify` below the threshold) -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -127,7 +111,6 @@
                 </executions>
             </plugin>
 
-            <!-- Software Composition Analysis: run with `mvn dependency-check:check` (see Jenkinsfile) -->
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
@@ -140,7 +123,6 @@
                         <format>XML</format>
                     </formats>
                     <skipTestScope>true</skipTestScope>
-                    <!-- NVD API key is injected from a Jenkins credential, never committed -->
                     <nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable>
                     <suppressionFiles>
                         <suppressionFile>ci/dependency-check-suppressions.xml</suppressionFile>

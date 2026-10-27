@@ -1,3 +1,2 @@
-# Only the tested jar is sent to the Docker build context
 *
 !target/finsecure-pay.jar

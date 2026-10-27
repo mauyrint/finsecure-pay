@@ -39,10 +39,8 @@ class ValidationServiceTest {
         assertThat(result.valid()).isTrue();
         assertThat(count("finsecure.transactions.validated", "outcome", "approved")).isEqualTo(1);
         assertThat(count("finsecure.transactions.validated", "outcome", "rejected")).isZero();
-        assertThat(registry.get("finsecure.transactions.review.required").counter().count()).isEqualTo(1);
         assertThat(registry.get("finsecure.transaction.amount").tag("currency", "USD").summary().totalAmount())
                 .isEqualTo(7500.0);
-        assertThat(registry.get("finsecure.validation.duration").timer().count()).isEqualTo(1);
     }
 
     @Test

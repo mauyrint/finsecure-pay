@@ -4,6 +4,5 @@ metadata:
   name: finsecure
   labels:
     app.kubernetes.io/part-of: finsecure-pay
-    # Enforce the Kubernetes "restricted" Pod Security Standard for every pod in this namespace
     pod-security.kubernetes.io/enforce: restricted
     pod-security.kubernetes.io/warn: restricted

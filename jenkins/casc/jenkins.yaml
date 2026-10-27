@@ -1,5 +1,3 @@
-# Jenkins Configuration-as-Code. Every ${VAR} is read from jenkins/.env (git-ignored).
-# Secrets therefore never appear in Git, and the whole controller can be rebuilt from scratch.
 jenkins:
   systemMessage: "FinSecure Pay CI/CD - managed by Configuration as Code"
   numExecutors: 2

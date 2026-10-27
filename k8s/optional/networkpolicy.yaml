@@ -1,7 +1,3 @@
-# Default-deny ingress for the namespace, then allow only the API port from anywhere (NLB)
-# and the management port from the monitoring namespace (Prometheus).
-# OPTIONAL hardening: apply after enabling the VPC CNI network-policy agent
-# (eksctl: addons vpc-cni configurationValues {"enableNetworkPolicy":"true"}) and verifying probes still pass.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

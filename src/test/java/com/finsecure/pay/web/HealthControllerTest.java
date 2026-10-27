@@ -6,8 +6,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.time.Clock;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.availability.ApplicationAvailability;
 import org.springframework.boot.availability.ReadinessState;
@@ -20,7 +18,7 @@ class HealthControllerTest {
         ApplicationAvailability availability = mock(ApplicationAvailability.class);
         when(availability.getReadinessState()).thenReturn(state);
         return MockMvcBuilders.standaloneSetup(
-                new HealthController(availability, Clock.systemUTC(), "1.0.0-test")).build();
+                new HealthController(availability, "1.0.0-test")).build();
     }
 
     @Test

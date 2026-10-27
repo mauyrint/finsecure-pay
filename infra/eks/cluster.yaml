@@ -1,14 +1,9 @@
-# eksctl create cluster -f infra/eks/cluster.yaml      (~15-20 min)
-# eksctl delete cluster -f infra/eks/cluster.yaml --disable-nodegroup-eviction   (tear down to stop costs!)
-#
-# AWS account ID already filled in (808644003376).
 apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 
 metadata:
   name: finsecure-eks
-  region: ap-southeast-1          # Singapore: lowest latency from Bangkok
-  # version: omitted -> eksctl uses the current EKS default (standard-support) version
+  region: ap-southeast-1
   tags:
     project: finsecure-pay
     owner: devops-capstone
@@ -16,8 +11,6 @@ metadata:
 iam:
   withOIDC: true
 
-# EKS access entries (no aws-auth ConfigMap editing). The CI user only gets edit rights
-# inside the application namespace - least privilege for the pipeline.
 accessConfig:
   authenticationMode: API_AND_CONFIG_MAP
   accessEntries:
@@ -28,17 +21,12 @@ accessConfig:
             type: namespace
             namespaces: ["finsecure"]
 
-# Kubernetes Secrets are envelope-encrypted at rest by EKS by default.
-# To use your own customer-managed KMS key instead, uncomment:
-# secretsEncryption:
-#   keyARN: arn:aws:kms:ap-southeast-1:808644003376:key/<KEY_ID>
-
 addons:
   - name: vpc-cni
   - name: coredns
   - name: kube-proxy
-  - name: metrics-server                     # needed by the HorizontalPodAutoscaler
-  - name: amazon-cloudwatch-observability    # Container Insights metrics + Fluent Bit log shipping
+  - name: metrics-server
+  - name: amazon-cloudwatch-observability
 
 managedNodeGroups:
   - name: ng-general
@@ -47,7 +35,7 @@ managedNodeGroups:
     desiredCapacity: 2
     maxSize: 4
     volumeSize: 30
-    privateNetworking: true                   # worker nodes have no public IPs
+    privateNetworking: true
     labels:
       workload: general
     iam:
@@ -56,9 +44,9 @@ managedNodeGroups:
         - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
         - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy   # lets Fluent Bit write to CloudWatch Logs
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
 
 cloudWatch:
   clusterLogging:
-    enableTypes: ["api", "audit", "authenticator"]   # control-plane audit trail
+    enableTypes: ["api", "audit", "authenticator"]
     logRetentionInDays: 7

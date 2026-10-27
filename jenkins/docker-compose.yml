@@ -1,14 +1,10 @@
-# Local CI stack: Jenkins (pipeline) + SonarQube (code quality / SAST)
-#   cp .env.example .env   # fill in values - .env is git-ignored
-#   docker compose up -d --build
-#   Jenkins:   http://localhost:8080      SonarQube: http://localhost:9000
 name: finsecure-ci
 services:
   jenkins:
     build: .
     image: finsecure/jenkins:local
     container_name: finsecure-jenkins
-    user: root                 # needed for /var/run/docker.sock on Docker Desktop (local lab only)
+    user: root
     restart: unless-stopped
     ports:
       - "8080:8080"

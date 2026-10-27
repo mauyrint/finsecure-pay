@@ -19,7 +19,6 @@ import com.finsecure.pay.config.ValidationProperties;
 
 import io.micrometer.core.instrument.MeterRegistry;
 
-/** Boots the full application context (externalised config, filters, metrics) end-to-end. */
 @SpringBootTest(properties = {
         "finsecure.validation.max-amount=2000",
         "finsecure.validation.review-threshold=1500",
@@ -42,8 +41,7 @@ class FinSecurePayApplicationTests {
     @BeforeEach
     void setUp() {
         mvc = MockMvcBuilders.webAppContextSetup(context)
-                .addFilters(context.getBean(com.finsecure.pay.web.RequestIdFilter.class),
-                        context.getBean(com.finsecure.pay.web.ApiKeyFilter.class))
+                .addFilters(context.getBean(com.finsecure.pay.web.ApiKeyFilter.class))
                 .build();
     }
 
