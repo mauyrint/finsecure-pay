@@ -6,6 +6,11 @@
 set -euo pipefail
 BASE="${1:?base url}"; N="${2:-300}"; RATIO="${3:-0.1}"; PAR="${4:-4}"
 KEY="${FINSECURE_API_KEY:-}"
+if [[ -z "$KEY" ]]; then
+  echo "ERROR: FINSECURE_API_KEY is not set, so every request would get 401." >&2
+  echo "Run first:  export \$(grep ^FINSECURE_API_KEY= jenkins/.env)" >&2
+  exit 1
+fi
 PCT=$(awk -v r="$RATIO" 'BEGIN{print int(r*100)}')
 export BASE KEY PCT
 one() {
