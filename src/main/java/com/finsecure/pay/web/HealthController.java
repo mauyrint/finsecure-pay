@@ -14,9 +14,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Public, lightweight health endpoint used for smoke tests and external checks.
- * Kubernetes probes use the richer Actuator groups on the management port
- * ({@code /actuator/health/liveness} and {@code /actuator/health/readiness}).
+ * Health endpoint used in three places: the public smoke test, {@code curl} inside the
+ * container (Docker HEALTHCHECK), and the Kubernetes startup/readiness/liveness probes.
+ * Returns 200 "UP" when the app accepts traffic and 503 "OUT_OF_SERVICE" otherwise
+ * (e.g. during graceful shutdown), so Kubernetes stops routing to a pod that is closing.
  */
 @RestController
 public class HealthController {

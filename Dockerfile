@@ -28,6 +28,7 @@ LABEL org.opencontainers.image.title="finsecure-pay" \
       org.opencontainers.image.source="https://github.com/mauyrint/finsecure-pay"
 
 RUN apk upgrade --no-cache \
+    && apk add --no-cache curl \
     && addgroup -S -g 10001 finsecure \
     && adduser -S -u 10001 -G finsecure -h /app finsecure
 
@@ -45,6 +46,6 @@ EXPOSE 8080 8081
 
 # Used by `docker run`; Kubernetes uses its own liveness/readiness probes instead.
 HEALTHCHECK --interval=15s --timeout=3s --start-period=40s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:8081/actuator/health/liveness || exit 1
+  CMD curl -fsS http://127.0.0.1:8080/health || exit 1
 
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher"]

@@ -76,24 +76,25 @@ spec:
               memory: 384Mi
             limits:
               memory: 768Mi
-          # Startup probe gives the JVM time to boot before liveness starts counting
+          # All three probes use the app's own /health endpoint (200 = UP, 503 = not ready).
+          # Startup probe gives the JVM time to boot before liveness starts counting.
           startupProbe:
             httpGet:
-              path: /actuator/health/liveness
-              port: management
+              path: /health
+              port: http
             periodSeconds: 5
             failureThreshold: 24     # up to 120s to start
           readinessProbe:
             httpGet:
-              path: /actuator/health/readiness
-              port: management
+              path: /health
+              port: http
             periodSeconds: 5
             timeoutSeconds: 2
             failureThreshold: 3
           livenessProbe:
             httpGet:
-              path: /actuator/health/liveness
-              port: management
+              path: /health
+              port: http
             periodSeconds: 10
             timeoutSeconds: 2
             failureThreshold: 3
