@@ -31,8 +31,8 @@ Replace `CHANGE_ME` in the `Dockerfile` OCI source label with your GitHub path.
 scripts/local-run.sh 1.0.0-local                # builds jar + image, runs container, calls /health and /validate
 docker images finsecure-pay
 docker login -u <dockerhub-user>
-docker tag finsecure-pay:1.0.0-local docker.io/<dockerhub-user>/finsecure-pay:1.0.0
-docker push docker.io/<dockerhub-user>/finsecure-pay:1.0.0   # first manual push; Jenkins pushes afterwards
+# EKS nodes are amd64 and a Mac is arm64, so build the pushed image for amd64
+docker buildx build --platform linux/amd64 -t docker.io/<dockerhub-user>/finsecure-pay:1.0.0 --push .   # first manual push; Jenkins pushes afterwards
 ```
 Create a Docker Hub **access token** (Account settings → Personal access tokens, Read & Write) for Jenkins.
 
@@ -96,6 +96,7 @@ Follow [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md): successful build, failed test, blocke
 | Jenkins fails at startup with a CasC error | `docker logs finsecure-jenkins`; a plugin renamed a field – comment out that block in `casc/jenkins.yaml` and configure it in the UI |
 | `permission denied /var/run/docker.sock` | the compose file runs Jenkins as root for Docker Desktop; on Linux add the docker group instead |
 | `exec format error` on EKS | image built for arm64; the pipeline builds `TARGET_PLATFORM=linux/amd64` – keep it, or use Graviton (t4g) nodes and `linux/arm64` |
+| Pods never created, event `violates PodSecurity` for container `opentelemetry-auto-instrumentation-java` | CloudWatch add-on injects a tracing init container | Pod annotation `instrumentation.opentelemetry.io/inject-java: "false"` (already in `k8s/10-deployment.yaml`) |
 | Deploy stage `Forbidden` | access entry ARN/namespace mismatch in `infra/eks/cluster.yaml` (`eksctl utils describe-access-entry`...) or namespace not created by bootstrap |
 | Sonar stage times out | SonarQube not ready (needs ~2 GB RAM in Docker Desktop) or wrong token |
 | Pods `CreateContainerConfigError` | Secret `finsecure-pay-secrets` missing – deploy via Jenkins or pass `FINSECURE_API_KEY` to `scripts/deploy.sh` |

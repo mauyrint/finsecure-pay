@@ -5,7 +5,7 @@
       "Sid": "AllowKubeconfigForFinSecureCluster",
       "Effect": "Allow",
       "Action": ["eks:DescribeCluster"],
-      "Resource": "arn:aws:eks:ap-southeast-1:<AWS_ACCOUNT_ID>:cluster/finsecure-eks"
+      "Resource": "arn:aws:eks:ap-southeast-1:808644003376:cluster/finsecure-eks"
     }
   ]
 }

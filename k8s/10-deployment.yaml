@@ -28,6 +28,13 @@ spec:
         app.kubernetes.io/version: "${APP_VERSION}"
       annotations:
         checksum/config: "${CONFIG_CHECKSUM}"
+        # The CloudWatch add-on injects tracing init containers (Java, Node.js, Python, .NET)
+        # into every pod. The Java one breaks the "restricted" Pod Security policy and we use
+        # Prometheus + CloudWatch Logs anyway, so this app opts out of all of them.
+        instrumentation.opentelemetry.io/inject-java: "false"
+        instrumentation.opentelemetry.io/inject-nodejs: "false"
+        instrumentation.opentelemetry.io/inject-python: "false"
+        instrumentation.opentelemetry.io/inject-dotnet: "false"
     spec:
       serviceAccountName: finsecure-pay
       automountServiceAccountToken: false

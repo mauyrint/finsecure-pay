@@ -5,6 +5,8 @@ Tip: before the demo, open tabs for GitHub, Jenkins, Docker Hub, Grafana, Promet
 
 ## Evidence checklist (screenshot file names map to slide placeholders)
 
+Save every screenshot in `docs/images/screenshots/` with the exact file name below.
+
 | # | Task | Evidence | How | Screenshot |
 |---|---|---|---|---|
 | 1 | T1 | GitHub repo + commit history | GitHub → *Commits* | `01-github-commits.png` |
@@ -13,6 +15,7 @@ Tip: before the demo, open tabs for GitHub, Jenkins, Docker Hub, Grafana, Promet
 | 4 | T2 | Image built + versioned | `docker images finsecure-pay` | `04-docker-images.png` |
 | 5 | T2 | Container runs, `/health` UP | `scripts/local-run.sh` output | `05-container-health.png` |
 | 6 | T2 | Image in registry | Docker Hub → *Tags* | `06-dockerhub-tags.png` |
+| 7a | T3 | EKS cluster + 2 nodes Ready | `eksctl get cluster` and `kubectl get nodes` | `07a-eks-nodes.png` |
 | 7 | T3 | ≥2 pods Ready + objects | `kubectl -n finsecure get deploy,rs,pods,svc,hpa,pdb -o wide` | `07-k8s-resources.png` |
 | 8 | T3 | Probes + ConfigMap | `kubectl -n finsecure describe deploy finsecure-pay` (Liveness/Readiness lines, envFrom) | `08-probes-config.png` |
 | 9 | T3 | External access | browser/curl `http://<nlb-dns>/health` | `09-external-access.png` |

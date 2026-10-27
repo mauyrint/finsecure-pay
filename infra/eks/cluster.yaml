@@ -1,7 +1,7 @@
 # eksctl create cluster -f infra/eks/cluster.yaml      (~15-20 min)
 # eksctl delete cluster -f infra/eks/cluster.yaml --disable-nodegroup-eviction   (tear down to stop costs!)
 #
-# Replace <AWS_ACCOUNT_ID> below before running.
+# AWS account ID already filled in (808644003376).
 apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 
@@ -21,7 +21,7 @@ iam:
 accessConfig:
   authenticationMode: API_AND_CONFIG_MAP
   accessEntries:
-    - principalARN: arn:aws:iam::<AWS_ACCOUNT_ID>:user/jenkins-deployer
+    - principalARN: arn:aws:iam::808644003376:user/jenkins-deployer
       accessPolicies:
         - policyARN: arn:aws:eks::aws:cluster-access-policy/AmazonEKSEditPolicy
           accessScope:
@@ -31,7 +31,7 @@ accessConfig:
 # Kubernetes Secrets are envelope-encrypted at rest by EKS by default.
 # To use your own customer-managed KMS key instead, uncomment:
 # secretsEncryption:
-#   keyARN: arn:aws:kms:ap-southeast-1:<AWS_ACCOUNT_ID>:key/<KEY_ID>
+#   keyARN: arn:aws:kms:ap-southeast-1:808644003376:key/<KEY_ID>
 
 addons:
   - name: vpc-cni
