@@ -20,7 +20,7 @@ pipeline {
         ansiColor('xterm')
         disableConcurrentBuilds()
         buildDiscarder(logRotator(numToKeepStr: '25'))
-        timeout(time: 60, unit: 'MINUTES')
+        timeout(time: 90, unit: 'MINUTES')   // first run downloads the NVD database
     }
 
     parameters {
