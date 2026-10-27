@@ -1,6 +1,6 @@
 # FinSecure Pay — Design Document
 
-Author: HAN · October 2026
+Author: Mayurint · October 2026
 
 This document explains how I built and deployed the FinSecure Pay transaction validation API: the architecture, why I chose each tool, how the system is secured, how it recovers from failures, and one AI idea for operations.
 
